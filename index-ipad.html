@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Kalkulačka jídel – iPad</title>
+  <style>
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, Roboto, Arial; background:#0f172a; color:#e5e7eb; }
+    .container { padding: 12px; max-width:1100px; margin:0 auto; }
+    .grid { display:grid; gap:14px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    button.item {
+      padding: 16px; border-radius: 16px; background:linear-gradient(180deg,#1e293b,#0f172a);
+      border:1px solid #334155; font-size:16px; font-weight:600; color:#e5e7eb;
+    }
+    button.item:active { transform:scale(.97); }
+    .price { margin-top:4px; font-size:14px; color:#94a3b8; }
+    .footer { position:sticky; bottom:0; background:#0b1220; padding:14px; display:flex; justify-content:space-between; }
+    .value { font-size:22px; font-weight:700; }
+    .btn { padding:10px 14px; background:#1e293b; border:1px solid #334155; border-radius:12px; color:#e5e7eb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3>Polévky</h3><div id="soups" class="grid"></div>
+    <h3>Hlavní jídla</h3><div id="mains" class="grid"></div>
+    <h3>Boxy</h3><div id="boxes" class="grid"></div>
+  </div>
+  <div class="footer">
+    <div>Součet: <span class="value" id="total">0 Kč</span></div>
+    <button class="btn" id="clearBtn">Vymazat</button>
+  </div>
+<script>
+const MENU = {
+  soups: [
+    { name: "Gulášová", price: 50 },
+    { name: "Hovězí vývar", price: 30 }
+  ],
+  mains: [
+    { name: "Vepřový řízek", price: 150 },
+    { name: "Kuřecí řízek", price: 150 },
+    { name: "Svíčková na smetaně", price: 180 },
+    { name: "Španělský ptáček", price: 190 },
+    { name: "Moravský vrabec", price: 160 },
+    { name: "Plněný knedlík", price: 150 },
+    { name: "Bramborák", price: 50 },
+    { name: "Dukátové buchtičky", price: 90 }
+  ],
+  boxes: [
+    { name: "🍜 Box polévka", price: 5 },
+    { name: "🍗 Box jídlo", price: 10 }
+  ]
+};
+const fmt = new Intl.NumberFormat('cs-CZ',{style:'currency',currency:'CZK',maximumFractionDigits:0});
+let total=0;
+function render(){['soups','mains','boxes'].forEach(sec=>{const el=document.getElementById(sec);el.innerHTML='';MENU[sec].forEach(i=>{const b=document.createElement('button');b.className='item';b.innerHTML=`<div>${i.name}</div><div class='price'>${fmt.format(i.price)}</div>`;b.onclick=()=>{total+=i.price;document.getElementById('total').textContent=fmt.format(total);};el.appendChild(b);});});}
+document.getElementById('clearBtn').onclick=()=>{total=0;document.getElementById('total').textContent=fmt.format(total);};
+render();
+</script>
+</body>
+</html>
