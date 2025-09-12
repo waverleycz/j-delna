@@ -95,18 +95,18 @@
   <script>
     const MENU = {
       soups: [
-        { name: "Gulášová + 1 kus pečiva", price: 50 },
-        { name: "Hovězí vývar s játrovými knedlíčky", price: 30 },
+        { name: "Gulášová", price: 50 },
+        { name: "Hovězí vývar", price: 30 },
       ],
       mains: [
-        { name: "Vepřový řízek, brambor, kyselá okurka", price: 150 },
-        { name: "Kuřecí řízek, brambor, kyselá okurka", price: 150 },
-        { name: "Svíčková na smetaně, houskový knedlík", price: 180 },
-        { name: "Španělský ptáček, rýže basmati", price: 190 },
-        { name: "Moravský vrabec, houskový + bramborový knedlík, dušené červené zelí", price: 160 },
-        { name: "Plněný bramborový knedlík uzeným masem, kysané zelí", price: 150 },
+        { name: "Vepřový řízek", price: 150 },
+        { name: "Kuřecí řízek", price: 150 },
+        { name: "Svíčková na smetaně", price: 180 },
+        { name: "Španělský ptáček", price: 190 },
+        { name: "Moravský vrabec", price: 160 },
+        { name: "Plněný bramborový knedlík", price: 150 },
         { name: "Bramborák", price: 50 },
-        { name: "Dukátové buchtičky s vanilkovým krémem", price: 90 },
+        { name: "Dukátové buchtičky", price: 90 },
       ],
       boxes: [
         { name: "🍜 Box polévka", price: 5, box: true },
@@ -137,7 +137,7 @@
       const btn = document.createElement('button');
       btn.className = 'item';
       if (item.box) btn.classList.add('box-item');
-      btn.innerHTML = `<div class="name">${item.name}</div><div class="price">${fmt.format(item.price)}</div>`;
+      btn.innerHTML = `<div class=\"name\">${item.name}</div><div class=\"price\">${fmt.format(item.price)}</div>`;
       btn.addEventListener('click', () => addItem(item));
       return btn;
     }
