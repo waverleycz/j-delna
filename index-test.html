@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kalkulačka jídel">
+  <title>Kalkulačka jídel</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #22c55e;
+      --ring: #334155;
+      --box-bg: #1b2735;
+      --box-border: #2563eb;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
+      background: linear-gradient(180deg, #0b1220, var(--bg));
+      color: var(--text);
+      display: flex; flex-direction: column;
+    }
+    .container { flex: 1; padding: 8px; max-width: 1100px; width: 100%; margin: 0 auto; }
+
+    .grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    button.item {
+      display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+      padding: 12px; border-radius: 14px;
+      background: linear-gradient(180deg, #1e293b, #0f172a);
+      border: 1px solid var(--ring);
+      box-shadow: 0 3px 8px rgba(0,0,0,.25);
+      font-size: 15px;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .08s ease;
+      color: var(--text);
+    }
+    button.item:active { transform: scale(.97); }
+
+    button.box-item {
+      background: linear-gradient(180deg, var(--box-bg), #0f172a);
+      border: 1px solid var(--box-border);
+    }
+
+    .item .name { font-weight: 700; font-size: 14px; }
+    .item .price { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    .section-title { margin: 12px 4px 6px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+
+    .footer {
+      position: sticky; bottom: 0; left: 0; right: 0;
+      background: rgba(10, 15, 25, 0.9); backdrop-filter: blur(8px);
+      border-top: 1px solid var(--ring);
+      padding: 10px 12px;
+    }
+    .footer .bar { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+    .sum { display: flex; gap: 8px; align-items: baseline; }
+    .label { color: var(--muted); font-size: 13px; }
+    .value { font-size: 20px; font-weight: 800; }
+    .btn {
+      border: 1px solid var(--ring); border-radius: 12px; padding: 8px 12px; font-weight: 700; font-size: 14px;
+      background: #0b1220; color: var(--text); cursor: pointer;
+    }
+    .btn:active { transform: scale(.97); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="section-title">Polévky</div>
+    <div id="soups" class="grid"></div>
+
+    <div class="section-title">Hlavní jídla</div>
+    <div id="mains" class="grid"></div>
+
+    <div class="section-title">Boxy</div>
+    <div id="boxes" class="grid"></div>
+  </div>
+
+  <footer class="footer">
+    <div class="bar">
+      <div class="sum"><span class="label">Součet:</span> <span class="value" id="total">0 Kč</span></div>
+      <button class="btn" id="clearBtn">Vymazat</button>
+    </div>
+  </footer>
+
+  <script>
+    const MENU = {
+      soups: [
+        { name: "Gulášová + 1 kus pečiva", price: 50 },
+        { name: "Hovězí vývar s játrovými knedlíčky", price: 30 },
+      ],
+      mains: [
+        { name: "Vepřový řízek, brambor, kyselá okurka", price: 150 },
+        { name: "Kuřecí řízek, brambor, kyselá okurka", price: 150 },
+        { name: "Svíčková na smetaně, houskový knedlík", price: 180 },
+        { name: "Španělský ptáček, rýže basmati", price: 190 },
+        { name: "Moravský vrabec, houskový + bramborový knedlík, dušené červené zelí", price: 160 },
+        { name: "Plněný bramborový knedlík uzeným masem, kysané zelí", price: 150 },
+        { name: "Bramborák", price: 50 },
+        { name: "Dukátové buchtičky s vanilkovým krémem", price: 90 },
+      ],
+      boxes: [
+        { name: "🍜 Box polévka", price: 5, box: true },
+        { name: "🍗 Box jídlo", price: 10, box: true },
+      ]
+    };
+
+    const fmt = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
+
+    const soupsEl = document.getElementById('soups');
+    const mainsEl = document.getElementById('mains');
+    const boxesEl = document.getElementById('boxes');
+    const totalEl = document.getElementById('total');
+    const clearBtn = document.getElementById('clearBtn');
+
+    let total = 0;
+
+    function renderTotal() { totalEl.textContent = fmt.format(total); }
+
+    function addItem(item) {
+      total += item.price;
+      renderTotal();
+    }
+
+    function clearTotal() { total = 0; renderTotal(); }
+
+    function buttonFor(item) {
+      const btn = document.createElement('button');
+      btn.className = 'item';
+      if (item.box) btn.classList.add('box-item');
+      btn.innerHTML = `<div class="name">${item.name}</div><div class="price">${fmt.format(item.price)}</div>`;
+      btn.addEventListener('click', () => addItem(item));
+      return btn;
+    }
+
+    function renderMenu() {
+      soupsEl.innerHTML = '';
+      mainsEl.innerHTML = '';
+      boxesEl.innerHTML = '';
+      MENU.soups.forEach(i => soupsEl.appendChild(buttonFor(i)));
+      MENU.mains.forEach(i => mainsEl.appendChild(buttonFor(i)));
+      MENU.boxes.forEach(i => boxesEl.appendChild(buttonFor(i)));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderMenu();
+      renderTotal();
+      clearBtn.addEventListener('click', clearTotal);
+    });
+  </script>
+</body>
+</html>
