@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Kalkulačka nápojů – iPad</title>
+  <style>
+    :root{
+      --bg:#0b0f19; --text:#e5e7eb; --muted:#94a3b8; --ring:#3b4a66;
+      --btn-bg1:#2a364d; --btn-bg2:#1a2235;
+      --danger:#ef4444; --danger-d:#dc2626;
+    }
+    html,body{height:100%;}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+    .container{flex:1;padding:14px;max-width:1400px;width:100%;margin:0 auto;}
+    .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));}
+    h3{margin:18px 6px 10px;font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+    .hint{margin:0 6px 12px;color:var(--muted);font-size:14px;line-height:1.45;}
+    button.item{
+      position:relative;padding:22px;border-radius:18px;
+      background:linear-gradient(180deg,var(--btn-bg1),var(--btn-bg2));
+      border:1px solid var(--ring);color:var(--text);
+      font-size:20px;font-weight:900;text-align:left;
+      -webkit-tap-highlight-color:transparent;
+      transition:transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+      min-height:170px;
+    }
+    button.item:active{transform:scale(.98);}
+    .meta{margin-top:8px;font-size:18px;color:var(--muted);font-weight:800;}
+    .list{margin-top:12px;font-size:16px;color:var(--muted);font-weight:700;line-height:1.45;}
+    .footer{
+      position:sticky;bottom:0;background:#0b1220;padding:14px 16px;
+      display:flex;justify-content:space-between;align-items:center;gap:18px;
+      border-top:1px solid var(--ring);
+    }
+    .value{font-size:26px;font-weight:900;}
+    .actions{display:flex;gap:22px;align-items:center;}
+    .btn{
+      padding:12px 16px;border-radius:14px;border:1px solid transparent;
+      font-weight:900;cursor:pointer;background:#1e293b;border-color:#334155;color:#e5e7eb;
+      font-size:16px;
+    }
+    .btn-undo{background:#0f172a;border-color:#475569;}
+    .btn-clear{background:var(--danger);border-color:var(--danger);color:#fff;}
+    .btn-clear:active{background:var(--danger-d);border-color:var(--danger-d);}
+    @keyframes flash{
+      0%{box-shadow:0 0 0 0 rgba(239,68,68,.0);border-color:var(--ring);}
+      30%{box-shadow:0 0 0 12px rgba(239,68,68,.28);border-color:#ef4444;}
+      100%{box-shadow:0 0 0 0 rgba(239,68,68,.0);border-color:var(--ring);}
+    }
+    .flash{animation:flash .28s ease;}
+    .badge{
+      position:absolute;right:14px;top:14px;min-width:28px;height:28px;padding:0 8px;border-radius:999px;
+      background:#22c55e;color:#0b1220;font-size:15px;font-weight:900;display:none;align-items:center;justify-content:center;
+    }
+    .badge.show{display:inline-flex;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3>0,04 l</h3>
+    <p class="hint">Tlačítka jsou seřazená od nejlevnějších. V každém tlačítku jsou vypsané všechny nápoje pro danou cenu.</p>
+    <div id="shots04" class="grid"></div>
+
+    <h3>0,02 l</h3>
+    <p class="hint">Stejné destiláty i v poloviční dávce.</p>
+    <div id="shots02" class="grid"></div>
+  </div>
+
+  <div class="footer">
+    <div>Součet: <span class="value" id="total">0 Kč</span></div>
+    <div class="actions">
+      <button class="btn btn-undo" id="undoBtn" aria-label="Zpět poslední položka">↩︎ Zpět</button>
+      <button class="btn btn-clear" id="clearBtn" aria-label="Vymazat vše">Vymazat</button>
+    </div>
+  </div>
+
+<script>
+const MENU = {
+  shots04: [
+    { title: "0,04 l – 60 Kč", price: 60, items: ["Rum","Zelená (peprmint)","Jablko","Švestka"] },
+    { title: "0,04 l – 80 Kč", price: 80, items: ["Slivovice","Tullamore","Heffron","Republica","Gin","Jägermeister","Becherovka","Vodka","Fernet","Polar jahoda"] },
+    { title: "0,04 l – 120 Kč", price: 120, items: ["Bumbu"] }
+  ],
+  shots02: [
+    { title: "0,02 l – 30 Kč", price: 30, items: ["Rum","Zelená (peprmint)","Jablko","Švestka"] },
+    { title: "0,02 l – 40 Kč", price: 40, items: ["Slivovice","Tullamore","Heffron","Republica","Gin","Jägermeister","Becherovka","Vodka","Fernet","Polar jahoda"] },
+    { title: "0,02 l – 60 Kč", price: 60, items: ["Bumbu"] }
+  ]
+};
+
+const fmt = new Intl.NumberFormat('cs-CZ', { style:'currency', currency:'CZK', maximumFractionDigits:0 });
+let total = 0;
+const counts = {};
+const history = [];
+
+function updateTotal(){ document.getElementById('total').textContent = fmt.format(total); }
+
+function updateBadge(key){
+  const bd = document.getElementById('badge-'+key);
+  if(!bd) return;
+  const v = counts[key] || 0;
+  if(v>0){ bd.textContent = v; bd.classList.add('show'); }
+  else { bd.textContent = '0'; bd.classList.remove('show'); }
+}
+
+function buttonFor(group, key){
+  const b = document.createElement('button');
+  b.className = 'item';
+  counts[key] = 0;
+
+  const listHtml = group.items.map(x => `• ${x}`).join("<br>");
+  b.innerHTML = `
+    <div>${group.title}</div>
+    <div class="meta">${fmt.format(group.price)}</div>
+    <div class="list">${listHtml}</div>
+    <span class="badge" id="badge-${key}">0</span>
+  `;
+
+  b.onclick = () => {
+    total += group.price;
+    updateTotal();
+
+    counts[key] = (counts[key] || 0) + 1;
+    updateBadge(key);
+
+    history.push({ key, price: group.price });
+
+    b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+    try { if(navigator.vibrate) navigator.vibrate(8); } catch(e) {}
+  };
+
+  return b;
+}
+
+function renderSection(domId, arr, prefix){
+  const el = document.getElementById(domId);
+  el.innerHTML = "";
+  [...arr].sort((a,b)=>a.price-b.price).forEach((g,i)=> el.appendChild(buttonFor(g, `${prefix}-${i}`)));
+}
+
+document.getElementById('clearBtn').onclick = () => {
+  total = 0; updateTotal();
+  Object.keys(counts).forEach(k => { counts[k]=0; updateBadge(k); });
+  history.length = 0;
+};
+
+document.getElementById('undoBtn').onclick = () => {
+  if(history.length===0) return;
+  const last = history.pop();
+
+  total = Math.max(0, total - last.price);
+  updateTotal();
+
+  counts[last.key] = Math.max(0, (counts[last.key]||0) - 1);
+  updateBadge(last.key);
+
+  try { if(navigator.vibrate) navigator.vibrate([10,40,10]); } catch(e) {}
+};
+
+renderSection('shots04', MENU.shots04, 'shots04');
+renderSection('shots02', MENU.shots02, 'shots02');
+updateTotal();
+</script>
+</body>
+</html>
