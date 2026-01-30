@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Kalkulačka nápojů – iPad</title>
+<style>
+:root{
+ --bg:#0b0f19;--text:#e5e7eb;--muted:#94a3b8;--ring:#3b4a66;
+ --btn1:#2a364d;--btn2:#1a2235;
+ --danger:#ef4444;--danger-d:#dc2626;
+}
+html,body{height:100%;}
+body{
+ margin:0;font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial;
+ background:var(--bg);color:var(--text);
+ display:flex;flex-direction:column;
+}
+.container{flex:1;padding:14px;max-width:1320px;margin:0 auto;}
+.grid{display:grid;gap:18px;grid-template-columns:repeat(3,1fr);}
+
+h3{margin:16px 6px 6px;font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+
+button.item{
+ position:relative;padding:18px;border-radius:18px;
+ background:linear-gradient(180deg,var(--btn1),var(--btn2));
+ border:1px solid var(--ring);color:var(--text);
+ text-align:left;min-height:140px;
+ -webkit-tap-highlight-color:transparent;
+ transition:transform .08s ease,box-shadow .12s ease,border-color .12s ease;
+}
+button.item:active{transform:scale(.97);}
+
+.name{font-size:20px;font-weight:900;}
+.price{margin-top:8px;font-size:17px;color:var(--muted);font-weight:800;}
+
+.footer{
+ position:sticky;bottom:0;background:#0b1220;
+ padding:14px 18px;display:flex;justify-content:space-between;align-items:center;
+ border-top:1px solid var(--ring);
+}
+.sum-label{font-size:18px;font-weight:800;color:var(--muted);}
+.value{font-size:32px;font-weight:900;}
+.actions{display:flex;gap:18px;align-items:center;}
+.btn{
+ padding:12px 16px;border-radius:16px;font-weight:900;font-size:16px;
+ border:1px solid #334155;background:#1e293b;color:#e5e7eb;
+}
+.btn-clear{background:var(--danger);border-color:var(--danger);color:#fff;}
+.btn-clear:active{background:var(--danger-d);border-color:var(--danger-d);}
+
+@keyframes flash{
+ 0%{box-shadow:0 0 0 0 rgba(239,68,68,.0);}
+ 30%{box-shadow:0 0 0 12px rgba(239,68,68,.28);border-color:#ef4444;}
+ 100%{box-shadow:0 0 0 0 rgba(239,68,68,.0);}
+}
+.flash{animation:flash .28s ease;}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h3>Velký panák</h3>
+<div class="grid">
+<button class="item" data-price="60"><div class="name">Velký panák – 60 Kč</div><div class="price">Rum • Zelená • Jablko • Švestka</div></button>
+<button class="item" data-price="80"><div class="name">Velký panák – 80 Kč</div><div class="price">Slivovice • Tullamore • Heffron • Republica • Gin • Jägermeister • Becherovka • Vodka • Fernet • Polar jahoda</div></button>
+<button class="item" data-price="120"><div class="name">Velký panák – 120 Kč</div><div class="price">Bumbu</div></button>
+</div>
+
+<h3>Malý panák</h3>
+<div class="grid">
+<button class="item" data-price="30"><div class="name">Malý panák – 30 Kč</div><div class="price">Rum • Zelená • Jablko • Švestka</div></button>
+<button class="item" data-price="40"><div class="name">Malý panák – 40 Kč</div><div class="price">Slivovice • Tullamore • Heffron • Republica • Gin • Jägermeister • Becherovka • Vodka • Fernet • Polar jahoda</div></button>
+<button class="item" data-price="60"><div class="name">Malý panák – 60 Kč</div><div class="price">Bumbu</div></button>
+</div>
+
+<h3>Nealko</h3>
+<div class="grid">
+<button class="item" data-price="20"><div class="name">Nealko 0,2</div><div class="price">20 Kč</div></button>
+<button class="item" data-price="30"><div class="name">Nealko 0,3</div><div class="price">30 Kč</div></button>
+</div>
+
+</div>
+
+<div class="footer">
+<div>
+ <div class="sum-label">Součet</div>
+ <div class="value" id="total">0 Kč</div>
+</div>
+<div class="actions">
+ <button class="btn btn-clear" id="clear">Vymazat</button>
+</div>
+</div>
+
+<script>
+let total=0;
+const fmt=new Intl.NumberFormat('cs-CZ',{style:'currency',currency:'CZK',maximumFractionDigits:0});
+const totalEl=document.getElementById('total');
+
+document.querySelectorAll('button.item').forEach(btn=>{
+ btn.onclick=()=>{
+  total+=Number(btn.dataset.price);
+  totalEl.textContent=fmt.format(total);
+  btn.classList.remove('flash');void btn.offsetWidth;btn.classList.add('flash');
+ }
+});
+document.getElementById('clear').onclick=()=>{total=0;totalEl.textContent=fmt.format(0);};
+</script>
+
+</body>
+</html>
