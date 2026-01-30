@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Kalkulačka – iPad</title>
+  <style>
+    :root{
+      --bg:#0b0f19; --text:#e5e7eb; --muted:#94a3b8; --ring:#3b4a66;
+      --btn-bg1:#2a364d; --btn-bg2:#1a2235;
+      --btn-red1:#4b1d23; --btn-red2:#271018; --ring-red:#ef4444;
+      --danger:#ef4444; --danger-d:#dc2626;
+      --tab:#111a2c;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial;
+      background:var(--bg); color:var(--text);
+      display:flex; flex-direction:column;
+      overflow:hidden;
+    }
+
+    .tabs{
+      display:flex; gap:10px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--ring);
+      background:rgba(11,18,32,.85);
+      backdrop-filter: blur(8px);
+    }
+    .tab{
+      flex:1;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid var(--ring);
+      background:var(--tab);
+      color:var(--text);
+      font-weight:900;
+      font-size:18px;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .tab.active{
+      border-color:#ef4444;
+      box-shadow:0 0 0 10px rgba(239,68,68,.10) inset;
+    }
+
+    /* víc využít šířku + menší boční odsazení */
+    .container{
+      flex:1;
+      padding:8px 8px 6px;
+      max-width:1440px;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      overflow:hidden;
+    }
+
+    .section{display:none;}
+    .section.active{display:block;}
+
+    h3{
+      margin:6px 4px 6px;
+      font-size:13px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    /* širší tlačítka: menší gap + víc šířky */
+    .grid{
+      display:grid;
+      gap:10px;
+      grid-template-columns:repeat(4, minmax(0,1fr));
+    }
+
+    button.item{
+      position:relative;
+      padding:12px 12px;
+      border-radius:14px;
+      background:linear-gradient(180deg,var(--btn-bg1),var(--btn-bg2));
+      border:1px solid var(--ring);
+      color:var(--text);
+      text-align:left;
+      min-height:84px;
+      -webkit-tap-highlight-color:transparent;
+      transition:transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+      overflow:hidden;
+    }
+    button.item:active{transform:scale(.98);}
+
+    /* červené položky (střiky) */
+    button.item.red{
+      background:linear-gradient(180deg,var(--btn-red1),var(--btn-red2));
+      border-color:#6b2a31;
+    }
+
+    .name{font-size:15px;font-weight:900;line-height:1.15;}
+    .price{margin-top:6px;font-size:13px;color:var(--muted);font-weight:800;}
+
+    .badge{
+      position:absolute; right:10px; top:10px;
+      min-width:22px; height:22px;
+      padding:0 7px;
+      border-radius:999px;
+      background:#22c55e; color:#0b1220;
+      font-size:12px; font-weight:900;
+      display:none;
+      align-items:center; justify-content:center;
+    }
+    .badge.show{display:inline-flex;}
+
+    .footer{
+      position:sticky; bottom:0;
+      background:#0b1220;
+      padding:14px 16px; /* větší, ale pořád nízké */
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-top:1px solid var(--ring);
+      gap:16px;
+    }
+    .sum-label{font-size:18px;font-weight:900;color:var(--muted);}
+    .value{font-size:30px;font-weight:900;}
+    .actions{display:flex;gap:18px; align-items:center;}
+    .btn{
+      padding:14px 18px;
+      border-radius:18px;
+      font-weight:900;
+      font-size:18px;
+      background:#1e293b;
+      border:1px solid #334155;
+      color:#e5e7eb;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .btn-undo{background:#0f172a;border-color:#475569;}
+    .btn-clear{background:var(--danger);border-color:var(--danger);color:#fff;}
+    .btn-clear:active{background:var(--danger-d);border-color:var(--danger-d);}
+
+    @keyframes flash{
+      0%{box-shadow:0 0 0 0 rgba(239,68,68,.0); border-color:var(--ring);}
+      30%{box-shadow:0 0 0 9px rgba(239,68,68,.28); border-color:#ef4444;}
+      100%{box-shadow:0 0 0 0 rgba(239,68,68,.0); border-color:var(--ring);}
+    }
+    .flash{animation:flash .28s ease;}
+
+    /* trochu zúžit, když by někdo otevřel menší šířku */
+    @media (max-width: 980px){
+      .grid{grid-template-columns:repeat(3, minmax(0,1fr));}
+    }
+  </style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tab active" id="tabFoods">Jídla a teplé nápoje</button>
+  <button class="tab" id="tabDrinks">Nápoje</button>
+</div>
+
+<div class="container">
+
+  <div class="section active" id="sectionFoods">
+    <h3>Jídla</h3>
+    <div id="foods" class="grid"></div>
+
+    <h3>Zákusky a pochutiny</h3>
+    <div id="snacks" class="grid"></div>
+
+    <h3>Káva a čaj</h3>
+    <div id="coffee" class="grid"></div>
+  </div>
+
+  <div class="section" id="sectionDrinks">
+    <!-- nadpis Nealko pryč, ať je to výš -->
+    <div id="soft" class="grid"></div>
+
+    <h3>Střiky</h3>
+    <div id="spritz" class="grid"></div>
+
+    <h3>Víno a sekt</h3>
+    <div id="wine" class="grid"></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <div>
+    <div class="sum-label">Součet</div>
+    <div class="value" id="total">0 Kč</div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-undo" id="undoBtn">↩︎ Zpět</button>
+    <button class="btn btn-clear" id="clearBtn">Vymazat</button>
+  </div>
+</div>
+
+<script>
+const MENU = {
+  foods: [
+    { name:"Řízek + brambor + okurka", price:150 },
+    { name:"Plněný bramb. knedlík + zelí", price:150 },
+    { name:"Topinky s masovou směsí", price:130 },
+    { name:"Utopenci + pečivo", price:60 },
+    { name:"Nakládaný hermelín + pečivo", price:80 },
+    { name:"Párek + pečivo", price:50 },
+    { name:"Chlebíčky (2 ks)", price:60 }
+  ],
+  snacks: [
+    { name:"Zákusky", price:50 },
+    { name:"Arašídy", price:30 },
+    { name:"Brambůrky", price:40 }
+  ],
+  coffee: [
+    { name:"Lungo / Cappuccino", price:50 },
+    { name:"Rozpustná / Turek", price:40 },
+    { name:"Čaj", price:20 }
+  ],
+  soft: [
+    { name:"Nealko 0,2", price:20 },
+    { name:"Nealko 0,3", price:30 },
+    { name:"Voda / džbán", price:20 },
+    { name:"Voda 1,5 l", price:40 }
+  ],
+  spritz: [
+    { name:"Červený slabý 0,3", price:50 },
+    { name:"Červený slabý 0,5", price:90 },
+    { name:"Červený silný 0,3", price:70 },
+    { name:"Červený silný 0,5", price:110 },
+    { name:"Bílý slabý 0,3", price:40 },
+    { name:"Bílý slabý 0,5", price:75 },
+    { name:"Bílý silný 0,3", price:65 },
+    { name:"Bílý silný 0,5", price:100 }
+  ],
+  wine: [
+    { name:"Víno rozlévané 0,1", price:30 },
+    { name:"Víno bílé 0,7", price:250 },
+    { name:"Víno červené 0,7", price:220 },
+    { name:"Sekt 0,7", price:260 },
+    { name:"Sekt 0,2", price:60 }
+  ]
+};
+
+const fmt=new Intl.NumberFormat('cs-CZ',{style:'currency',currency:'CZK',maximumFractionDigits:0});
+let total=0;
+const counts={};
+const history=[];
+
+function updateTotal(){document.getElementById('total').textContent=fmt.format(total);}
+function updateBadge(k){
+  const b=document.getElementById('badge-'+k);
+  if(!b) return;
+  const v=counts[k]||0;
+  if(v>0){b.textContent=v;b.classList.add('show');}
+  else{b.classList.remove('show');}
+}
+function isRedDrink(name){
+  const n = (name||"").toLowerCase();
+  return n.startsWith("červen") || n.includes("červen");
+}
+
+function buttonFor(item,key,opts){
+  const b=document.createElement('button');
+  b.className='item';
+  counts[key]=0;
+
+  if(opts && opts.red){ b.classList.add('red'); }
+
+  b.innerHTML=`<div class="name">${item.name}</div><div class="price">${fmt.format(item.price)}</div><span class="badge" id="badge-${key}">0</span>`;
+  b.onclick=()=>{
+    total+=item.price; updateTotal();
+    counts[key]=(counts[key]||0)+1; updateBadge(key);
+    history.push({key,price:item.price});
+    b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+  };
+  return b;
+}
+
+function render(id,arr,p,optionsFn){
+  const el=document.getElementById(id); el.innerHTML="";
+  arr.forEach((it,i)=>{
+    const opts = optionsFn ? optionsFn(it) : null;
+    el.appendChild(buttonFor(it,`${p}-${i}`,opts));
+  });
+}
+
+document.getElementById('clearBtn').onclick=()=>{
+  total=0; updateTotal();
+  Object.keys(counts).forEach(k=>{counts[k]=0; updateBadge(k);});
+  history.length=0;
+};
+document.getElementById('undoBtn').onclick=()=>{
+  if(!history.length) return;
+  const l=history.pop();
+  total=Math.max(0,total-l.price); updateTotal();
+  counts[l.key]=Math.max(0,(counts[l.key]||0)-1); updateBadge(l.key);
+};
+
+function setTab(t){
+  document.getElementById('tabFoods').classList.toggle('active',t==='foods');
+  document.getElementById('tabDrinks').classList.toggle('active',t==='drinks');
+  document.getElementById('sectionFoods').classList.toggle('active',t==='foods');
+  document.getElementById('sectionDrinks').classList.toggle('active',t==='drinks');
+}
+document.getElementById('tabFoods').onclick=()=>setTab('foods');
+document.getElementById('tabDrinks').onclick=()=>setTab('drinks');
+
+render('foods',MENU.foods,'foods');
+render('snacks',MENU.snacks,'snacks');
+render('coffee',MENU.coffee,'coffee');
+render('soft',MENU.soft,'soft');
+render('spritz',MENU.spritz,'spritz',(it)=>({red:isRedDrink(it.name)}));
+render('wine',MENU.wine,'wine',(it)=>({red:isRedDrink(it.name)}));
+updateTotal();
+</script>
+</body>
+</html>
