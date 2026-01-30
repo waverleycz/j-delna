@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Kalkulačka – iPad</title>
+  <style>
+    :root{
+      --bg:#0b0f19; --text:#e5e7eb; --muted:#94a3b8; --ring:#3b4a66;
+      --btn-bg1:#2a364d; --btn-bg2:#1a2235;
+      --danger:#ef4444; --danger-d:#dc2626;
+      --tab:#111a2c;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial;
+      background:var(--bg); color:var(--text);
+      display:flex; flex-direction:column;
+      overflow:hidden; /* bez scrollu */
+    }
+
+    /* přepínač */
+    .tabs{
+      display:flex; gap:10px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--ring);
+      background:rgba(11,18,32,.85);
+      backdrop-filter: blur(8px);
+    }
+    .tab{
+      flex:1;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--ring);
+      background:var(--tab);
+      color:var(--text);
+      font-weight:900;
+      font-size:16px;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .tab.active{
+      border-color:#ef4444;
+      box-shadow:0 0 0 8px rgba(239,68,68,.10) inset;
+    }
+
+    .container{
+      flex:1;
+      padding:8px 12px 8px; /* trochu výš */
+      max-width:1280px;
+      width:100%;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      overflow:hidden;
+    }
+
+    .section{ display:none; overflow:hidden; }
+    .section.active{ display:block; }
+
+    h3{
+      margin:8px 4px 6px; /* menší, ať se vejde víc obsahu */
+      font-size:13px; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.08em;
+    }
+
+    .grid{
+      display:grid;
+      gap:12px;
+      grid-template-columns:repeat(4, minmax(0, 1fr)); /* iPad 10,2" landscape */
+    }
+
+    button.item{
+      position:relative;
+      padding:12px 12px;
+      border-radius:14px;
+      background:linear-gradient(180deg,var(--btn-bg1),var(--btn-bg2));
+      border:1px solid var(--ring);
+      color:var(--text);
+      text-align:left;
+      -webkit-tap-highlight-color:transparent;
+      transition:transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+      min-height:84px;
+      overflow:hidden;
+    }
+    button.item:active{transform:scale(.98);}
+
+    .name{font-size:15px; font-weight:900; line-height:1.15;}
+    .price{margin-top:6px; font-size:13px; color:var(--muted); font-weight:800;}
+
+    .badge{
+      position:absolute; right:10px; top:10px;
+      min-width:22px; height:22px; padding:0 7px;
+      border-radius:999px;
+      background:#22c55e; color:#0b1220;
+      font-size:12px; font-weight:900;
+      display:none; align-items:center; justify-content:center;
+    }
+    .badge.show{display:inline-flex;}
+
+    .footer{
+      position:sticky; bottom:0;
+      background:#0b1220; padding:12px 14px;
+      display:flex; justify-content:space-between; align-items:center; gap:14px;
+      border-top:1px solid var(--ring);
+    }
+    .sum-label{font-size:16px; font-weight:800; color:var(--muted);}
+    .value{font-size:26px; font-weight:900;}
+    .actions{display:flex; gap:16px; align-items:center;}
+    .btn{
+      padding:10px 12px; border-radius:14px;
+      border:1px solid transparent;
+      font-weight:900; cursor:pointer;
+      background:#1e293b; border-color:#334155; color:#e5e7eb;
+      font-size:15px;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .btn-undo{background:#0f172a; border-color:#475569;}
+    .btn-clear{background:var(--danger); border-color:var(--danger); color:#fff;}
+    .btn-clear:active{background:var(--danger-d); border-color:var(--danger-d);}
+
+    @keyframes flash{
+      0%{box-shadow:0 0 0 0 rgba(239,68,68,.0); border-color:var(--ring);}
+      30%{box-shadow:0 0 0 9px rgba(239,68,68,.28); border-color:#ef4444;}
+      100%{box-shadow:0 0 0 0 rgba(239,68,68,.0); border-color:var(--ring);}
+    }
+    .flash{animation:flash .28s ease;}
+
+    @media (max-width: 900px){
+      .grid{grid-template-columns:repeat(3, minmax(0,1fr));}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tabs">
+    <button class="tab active" id="tabFoods">Jídla</button>
+    <button class="tab" id="tabDrinks">Nápoje</button>
+  </div>
+
+  <div class="container">
+    <!-- JÍDLA -->
+    <div class="section active" id="sectionFoods">
+      <h3>Jídla</h3>
+      <div id="foods" class="grid"></div>
+
+      <h3>Zákusky a pochutiny</h3>
+      <div id="snacks" class="grid"></div>
+
+      <h3>Káva a čaj</h3>
+      <div id="coffee" class="grid"></div>
+    </div>
+
+    <!-- NÁPOJE -->
+    <div class="section" id="sectionDrinks">
+      <h3>Nealko</h3>
+      <div id="soft" class="grid"></div>
+
+      <h3>Střiky</h3>
+      <div id="spritz" class="grid"></div>
+
+      <h3>Víno a sekt</h3>
+      <div id="wine" class="grid"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="sum-label">Součet</div>
+      <div class="value" id="total">0 Kč</div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-undo" id="undoBtn">↩︎ Zpět</button>
+      <button class="btn btn-clear" id="clearBtn">Vymazat</button>
+    </div>
+  </div>
+
+<script>
+const MENU = {
+  foods: [
+    { name: "Řízek + brambor + okurka", price: 150 },
+    { name: "Plněný bramb. knedlík + zelí", price: 150 },
+    { name: "Topinky s masovou směsí", price: 130 },
+    { name: "Utopenci + pečivo", price: 60 },
+    { name: "Nakládaný hermelín + pečivo", price: 80 },
+    { name: "Párek + pečivo", price: 50 },
+    { name: "Chlebíčky (2 ks)", price: 60 }
+  ],
+  snacks: [
+    { name: "Zákusky", price: 50 },
+    { name: "Arašídy", price: 30 },
+    { name: "Brambůrky", price: 40 }
+  ],
+  coffee: [
+    { name: "Lungo / Cappuccino", price: 50 },
+    { name: "Rozpustná / Turek", price: 40 },
+    { name: "Čaj", price: 20 }
+  ],
+  soft: [
+    { name: "Nealko 0,2", price: 20 },
+    { name: "Nealko 0,3", price: 30 },
+    { name: "Voda / džbán", price: 20 },
+    { name: "Voda 1,5 l", price: 40 }
+  ],
+  spritz: [
+    { name: "Červený slabý 0,3", price: 50 },
+    { name: "Červený slabý 0,5", price: 90 },
+    { name: "Červený silný 0,3", price: 70 },
+    { name: "Červený silný 0,5", price: 110 },
+    { name: "Bílý slabý 0,3", price: 40 },
+    { name: "Bílý slabý 0,5", price: 75 },
+    { name: "Bílý silný 0,3", price: 65 },
+    { name: "Bílý silný 0,5", price: 100 }
+  ],
+  wine: [
+    { name: "Víno rozlévané 0,1", price: 30 },
+    { name: "Víno bílé 0,7", price: 250 },
+    { name: "Víno červené 0,7", price: 220 },
+    { name: "Sekt 0,7", price: 260 },
+    { name: "Sekt 0,2", price: 60 }
+  ]
+};
+
+const fmt = new Intl.NumberFormat('cs-CZ',{style:'currency',currency:'CZK',maximumFractionDigits:0});
+let total = 0;
+const counts = {};
+const history = [];
+
+function updateTotal(){ document.getElementById('total').textContent = fmt.format(total); }
+
+function updateBadge(key){
+  const bd = document.getElementById('badge-'+key);
+  if(!bd) return;
+  const v = counts[key] || 0;
+  if(v>0){ bd.textContent = v; bd.classList.add('show'); }
+  else { bd.textContent = '0'; bd.classList.remove('show'); }
+}
+
+function buttonFor(item, key){
+  const b = document.createElement('button');
+  b.className = 'item';
+  counts[key] = 0;
+
+  b.innerHTML = `
+    <div class="name">${item.name}</div>
+    <div class="price">${fmt.format(item.price)}</div>
+    <span class="badge" id="badge-${key}">0</span>
+  `;
+
+  b.onclick = () => {
+    total += item.price; updateTotal();
+    counts[key] = (counts[key] || 0) + 1; updateBadge(key);
+    history.push({ key, price: item.price });
+
+    b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+    try { if(navigator.vibrate) navigator.vibrate(8); } catch(e) {}
+  };
+
+  return b;
+}
+
+function renderSection(domId, arr, prefix){
+  const el = document.getElementById(domId);
+  el.innerHTML = "";
+  [...arr].sort((a,b)=>a.price-b.price).forEach((item,i)=>{
+    el.appendChild(buttonFor(item, `${prefix}-${i}`));
+  });
+}
+
+document.getElementById('clearBtn').onclick = () => {
+  total = 0; updateTotal();
+  Object.keys(counts).forEach(k => { counts[k]=0; updateBadge(k); });
+  history.length = 0;
+};
+
+document.getElementById('undoBtn').onclick = () => {
+  if(history.length===0) return;
+  const last = history.pop();
+  total = Math.max(0, total - last.price); updateTotal();
+  counts[last.key] = Math.max(0, (counts[last.key]||0) - 1); updateBadge(last.key);
+  try { if(navigator.vibrate) navigator.vibrate([10,40,10]); } catch(e) {}
+};
+
+function setTab(which){
+  const tabFoods = document.getElementById('tabFoods');
+  const tabDrinks = document.getElementById('tabDrinks');
+  const secFoods = document.getElementById('sectionFoods');
+  const secDrinks = document.getElementById('sectionDrinks');
+  if(which === 'foods'){
+    tabFoods.classList.add('active'); tabDrinks.classList.remove('active');
+    secFoods.classList.add('active'); secDrinks.classList.remove('active');
+  } else {
+    tabDrinks.classList.add('active'); tabFoods.classList.remove('active');
+    secDrinks.classList.add('active'); secFoods.classList.remove('active');
+  }
+}
+document.getElementById('tabFoods').onclick = ()=>setTab('foods');
+document.getElementById('tabDrinks').onclick = ()=>setTab('drinks');
+
+renderSection('foods',  MENU.foods,  'foods');
+renderSection('snacks', MENU.snacks, 'snacks');
+renderSection('coffee', MENU.coffee, 'coffee');
+renderSection('soft',   MENU.soft,   'soft');
+renderSection('spritz', MENU.spritz, 'spritz');
+renderSection('wine',   MENU.wine,   'wine');
+updateTotal();
+</script>
+</body>
+</html>
