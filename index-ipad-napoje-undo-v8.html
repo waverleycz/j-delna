@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Kalkulačka nápojů – iPad</title>
+  <style>
+    :root{
+      --bg:#0b0f19; --text:#e5e7eb; --muted:#94a3b8; --ring:#3b4a66;
+      --btn-bg1:#2a364d; --btn-bg2:#1a2235;
+      --danger:#ef4444; --danger-d:#dc2626;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial;
+      background:var(--bg);
+      color:var(--text);
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* méně paddingu dole, ať se poslední řada vejde */
+    .container{
+      flex:1;
+      padding:10px 12px 6px;
+      max-width:1280px;
+      width:100%;
+      margin:0 auto;
+    }
+
+    .grid{
+      display:grid;
+      gap:16px;
+      grid-template-columns:repeat(3, minmax(280px, 1fr));
+      margin-bottom:12px;
+    }
+
+    button.item{
+      position:relative;
+      padding:16px;
+      border-radius:16px;
+      background:linear-gradient(180deg,var(--btn-bg1),var(--btn-bg2));
+      border:1px solid var(--ring);
+      color:var(--text);
+      text-align:left;
+      -webkit-tap-highlight-color:transparent;
+      transition:transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+      min-height:124px;
+      overflow:hidden;
+    }
+    button.item:active{transform:scale(.98);}
+
+    .name{font-size:18px;font-weight:900;line-height:1.2;}
+    .meta{margin-top:6px;font-size:16px;color:var(--muted);font-weight:800;}
+    .list{margin-top:10px;font-size:14px;color:var(--muted);font-weight:700;line-height:1.35;}
+    .list.two-col{column-count:2;column-gap:18px;}
+    .list .li{break-inside:avoid;display:block;padding-right:6px;}
+
+    .badge{
+      position:absolute;
+      right:12px;
+      top:12px;
+      min-width:26px;
+      height:26px;
+      padding:0 8px;
+      border-radius:999px;
+      background:#22c55e;
+      color:#0b1220;
+      font-size:14px;
+      font-weight:900;
+      display:none;
+      align-items:center;
+      justify-content:center;
+    }
+    .badge.show{display:inline-flex;}
+
+    .footer{
+      position:sticky;
+      bottom:0;
+      background:#0b1220;
+      padding:10px 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      border-top:1px solid var(--ring);
+    }
+    .sum-label{font-size:16px;font-weight:800;color:var(--muted);}
+    .value{font-size:28px;font-weight:900;}
+    .actions{display:flex;gap:16px;align-items:center;}
+    .btn{
+      padding:10px 14px;
+      border-radius:14px;
+      border:1px solid transparent;
+      font-weight:900;
+      cursor:pointer;
+      background:#1e293b;
+      border-color:#334155;
+      color:#e5e7eb;
+      font-size:15px;
+    }
+    .btn-undo{background:#0f172a;border-color:#475569;}
+    .btn-clear{background:var(--danger);border-color:var(--danger);color:#fff;}
+    .btn-clear:active{background:var(--danger-d);border-color:var(--danger-d);}
+
+    @keyframes flash{
+      0%{box-shadow:0 0 0 0 rgba(239,68,68,.0);border-color:var(--ring);}
+      30%{box-shadow:0 0 0 10px rgba(239,68,68,.28);border-color:#ef4444;}
+      100%{box-shadow:0 0 0 0 rgba(239,68,68,.0);border-color:var(--ring);}
+    }
+    .flash{animation:flash .28s ease;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="shots04" class="grid"></div>
+    <div id="shots02" class="grid"></div>
+    <div id="soft" class="grid"></div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="sum-label">Součet</div>
+      <div class="value" id="total">0 Kč</div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-undo" id="undoBtn">↩︎ Zpět</button>
+      <button class="btn btn-clear" id="clearBtn">Vymazat</button>
+    </div>
+  </div>
+
+<script>
+const MENU = {
+  shots04: [
+    { title: "Velký panák – 60 Kč", price: 60, items: ["Rum","Zelená (peprmint)","Jablko","Švestka"] },
+    { title: "Velký panák – 80 Kč", price: 80, items: ["Slivovice","Tullamore","Heffron","Republica","Gin","Jägermeister","Becherovka","Vodka","Fernet","Polar jahoda"] },
+    { title: "Velký panák – 120 Kč", price: 120, items: ["Bumbu"] }
+  ],
+  shots02: [
+    { title: "Malý panák – 30 Kč", price: 30, items: ["Rum","Zelená (peprmint)","Jablko","Švestka"] },
+    { title: "Malý panák – 40 Kč", price: 40, items: ["Slivovice","Tullamore","Heffron","Republica","Gin","Jägermeister","Becherovka","Vodka","Fernet","Polar jahoda"] },
+    { title: "Malý panák – 60 Kč", price: 60, items: ["Bumbu"] }
+  ],
+  soft: [
+    { title: "Nealko 0,2 – 20 Kč", price: 20, items: [] },
+    { title: "Nealko 0,3 – 30 Kč", price: 30, items: [] }
+  ]
+};
+
+const fmt = new Intl.NumberFormat('cs-CZ',{style:'currency',currency:'CZK',maximumFractionDigits:0});
+let total = 0;
+const counts = {};
+const history = [];
+
+function updateTotal(){
+  document.getElementById('total').textContent = fmt.format(total);
+}
+
+function updateBadge(key){
+  const bd = document.getElementById('badge-'+key);
+  if(!bd) return;
+  const v = counts[key] || 0;
+  if(v>0){ bd.textContent = v; bd.classList.add('show'); }
+  else { bd.textContent = '0'; bd.classList.remove('show'); }
+}
+
+function buttonFor(group, key){
+  const b = document.createElement('button');
+  b.className = 'item';
+  counts[key] = 0;
+
+  const hasList = group.items && group.items.length;
+  const listClass = (hasList && group.items.length >= 7) ? "list two-col" : "list";
+  const listHtml = hasList ? group.items.map(x => `<span class="li">• ${x}</span>`).join("") : "";
+
+  b.innerHTML = `
+    <div class="name">${group.title}</div>
+    <div class="meta">${fmt.format(group.price)}</div>
+    ${hasList ? `<div class="${listClass}">${listHtml}</div>` : ``}
+    <span class="badge" id="badge-${key}">0</span>
+  `;
+
+  b.onclick = () => {
+    total += group.price;
+    updateTotal();
+    counts[key] = (counts[key] || 0) + 1;
+    updateBadge(key);
+    history.push({ key, price: group.price });
+
+    b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+  };
+
+  return b;
+}
+
+function renderSection(domId, arr, prefix){
+  const el = document.getElementById(domId);
+  el.innerHTML = "";
+  [...arr].sort((a,b)=>a.price-b.price)
+    .forEach((g,i)=> el.appendChild(buttonFor(g, `${prefix}-${i}`)));
+}
+
+document.getElementById('clearBtn').onclick = () => {
+  total = 0; updateTotal();
+  Object.keys(counts).forEach(k => { counts[k]=0; updateBadge(k); });
+  history.length = 0;
+};
+
+document.getElementById('undoBtn').onclick = () => {
+  if(history.length===0) return;
+  const last = history.pop();
+  total = Math.max(0, total - last.price); updateTotal();
+  counts[last.key] = Math.max(0, (counts[last.key]||0) - 1); updateBadge(last.key);
+};
+
+renderSection('shots04', MENU.shots04, 'shots04');
+renderSection('shots02', MENU.shots02, 'shots02');
+renderSection('soft', MENU.soft, 'soft');
+updateTotal();
+</script>
+</body>
+</html>
